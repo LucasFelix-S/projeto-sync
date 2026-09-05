@@ -1,0 +1,52 @@
+-- Json padrão para o meu projeto:
+/*	{
+		"codigoErp": 123,
+		"descricao": "Dipirona Sódica 500mg - 20 Comprimidos",
+		"categoriaId": 1,
+		"estoque": 250,
+		"preco": 12.90,
+		"statusId": 1
+	}
+	
+	
+	{"codigoErp":123,"descricao":"Dipirona Sódica 500mg - 20 Comprimidos","categoriaId":15,"estoque":250,"preco":12.90,"statusId":1}
+	
+ */
+
+USE projetos;
+GO
+
+CREATE TABLE dbo.TB_JSON_RECEBIDO
+(
+    ID          	BIGINT IDENTITY(1,1) PRIMARY KEY,
+    CONTEUDO    	NVARCHAR(MAX) NOT NULL,
+    DATA_HORA   	DATETIME2 CONSTRAINT DF_JSON_DATA_HORA DEFAULT SYSDATETIME(),
+    TIPO        	VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE dbo.TB_CATEGORIA
+(
+    ID       		INT IDENTITY(1,1) PRIMARY KEY,
+    NOME    		VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE dbo.TB_CADASTRO_PRODUTO
+(
+    CODIGO_ERP      BIGINT PRIMARY KEY,
+    DESCRICAO       VARCHAR(150) NOT NULL,
+    ID_CATEGORIA    INT NOT NULL REFERENCES projetos.dbo.TB_CATEGORIA(ID),
+    ID_STATUS       VARCHAR(30) NOT NULL CONSTRAINT DF_CADASTRO_PRODUTO_STATUS DEFAULT 'ATIVO'
+);
+
+CREATE TABLE dbo.TB_ESTOQUE_PRODUTO
+(
+    CODIGO_ERP      BIGINT PRIMARY KEY REFERENCES projetos.dbo.TB_CADASTRO_PRODUTO(CODIGO_ERP),
+    SALDO_ESTOQUE   DECIMAL(18,4) NOT NULL CONSTRAINT DF_ESTOQUE_PRODUTO DEFAULT 0
+);
+
+CREATE TABLE dbo.TB_PRECO_PRODUTO
+(
+    CODIGO_ERP      BIGINT PRIMARY KEY REFERENCES projetos.dbo.TB_CADASTRO_PRODUTO(CODIGO_ERP),
+    PRECO           DECIMAL(18,2) NOT NULL
+);
+
