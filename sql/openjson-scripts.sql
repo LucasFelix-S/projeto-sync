@@ -1,53 +1,54 @@
+DECLARE @DadosJson TABLE (
+	codigoErp			BIGINT,
+	descricao			VARCHAR(150),
+	categoriaId			INT,
+	estoque				DECIMAL(18,4),
+	preco				DECIMAL(18,2),
+	statusId			INT
+)
+
 BEGIN
 	
 	BEGIN TRANSACTION;
 	BEGIN TRY
-	
-		IF EXISTS (
-			SELECT 1
-			FROM TB_JSON_RECEBIDO
-			WHERE ISJSON(CONTEUDO) = 1
-			AND tipo = 'produtos'
+		
+		INSERT INTO @DadosJson(codigoErp, descricao, categoriaId, estoque, preco, statusId)
+		SELECT
+			codigoErp,
+			descricao,
+			categoriaId,
+			estoque,
+			preco,
+			statusId
+		FROM TB_JSON_RECEBIDO
+		CROSS APPLY OPENJSON(CONTEUDO)
+			
+		WITH (
+			codigoErp BIGINT,
+			descricao VARCHAR(150),
+			categoriaId INT,
+			estoque DECIMAL(18,4),
+			preco DECIMAL(18, 2),
+			statusId INT
 		)
 		
-		/*PARA AMANHÃ EU DEVO SALVAR O JSON NUMA VARIÁVEL DE TABELA. PARA QUE ELE SEJA LIDO UMA VEZ E OS DADOS
-		PERSISTIDOS A PARTIR DE UMA TABELA TEMPORÁRIA COMPLETA.*/
+		WHERE TIPO = 'produtos';
 		
 		INSERT INTO TB_CADASTRO_PRODUTO(CODIGO_ERP, DESCRICAO, ID_CATEGORIA, ID_STATUS)
 		SELECT
 			codigoErp,
 			descricao,
 			categoriaId,
-			statusId
+			statusId	
+		FROM @DadosJson;
 				
-		FROM TB_JSON_RECEBIDO
-		CROSS APPLY OPENJSON(CONTEUDO)
-		
-		WITH(
-			codigoErp BIGINT,
-			descricao VARCHAR(150),
-			categoriaId INT,
-			statusId INT
-		)
-		
-		WHERE TIPO = 'produtos'
-		
 		
 		
 		INSERT INTO TB_ESTOQUE_PRODUTO(CODIGO_ERP, SALDO_ESTOQUE)
 		SELECT
 			codigoErp,
-			estoque
-			
-		FROM TB_JSON_RECEBIDO
-		CROSS APPLY OPENJSON(CONTEUDO)
-		
-		WITH(
-			codigoErp BIGINT,
-			estoque DECIMAL(18,4)
-		)
-		
-		WHERE TIPO = 'produtos'
+			estoque	
+		FROM @DadosJson;
 		
 		
 		
@@ -55,14 +56,7 @@ BEGIN
 		SELECT
 			codigoErp,
 			preco
-		
-		FROM TB_JSON_RECEBIDO
-		CROSS APPLY OPENJSON(CONTEUDO)
-		
-		WITH(
-			codigoErp BIGINT,
-			preco DECIMAL(18,2)
-		)
+		FROM @DadosJson;
 		
 			
 	COMMIT TRANSACTION;
@@ -71,7 +65,9 @@ BEGIN
 	BEGIN CATCH
 	
 		ROLLBACK TRANSACTION;
-		SELECT 'ERRO!'
+		SELECT
+		    ERROR_NUMBER() AS numero,
+		    ERROR_MESSAGE() AS mensagem;
 	
 	END CATCH
 	
