@@ -1,0 +1,76 @@
+IF EXISTS (
+	SELECT 1
+	FROM TB_JSON_RECEBIDO
+	WHERE ISJSON(CONTEUDO) = 1
+	  AND tipo = 'produtos'
+)
+BEGIN
+	
+	BEGIN TRANSACTION;
+	BEGIN TRY
+	
+		INSERT INTO TB_CADASTRO_PRODUTO(CODIGO_ERP, DESCRICAO, ID_CATEGORIA, ID_STATUS)
+		SELECT
+			codigoErp,
+			descricao,
+			categoriaId,
+			statusId
+				
+		FROM TB_JSON_RECEBIDO
+		CROSS APPLY OPENJSON(CONTEUDO)
+		
+		WITH(
+			codigoErp BIGINT,
+			descricao VARCHAR(150),
+			categoriaId INT,
+			statusId INT
+		)
+		
+		WHERE TIPO = 'produtos'
+		
+		
+		
+		INSERT INTO TB_ESTOQUE_PRODUTO(CODIGO_ERP, SALDO_ESTOQUE)
+		SELECT
+			codigoErp,
+			estoque
+			
+		FROM TB_JSON_RECEBIDO
+		CROSS APPLY OPENJSON(CONTEUDO)
+		
+		WITH(
+			codigoErp BIGINT,
+			estoque DECIMAL(18,4)
+		)
+		
+		WHERE TIPO = 'produtos'
+		
+		
+		
+		INSERT INTO TB_PRECO_PRODUTO(CODIGO_ERP, PRECO)
+		SELECT
+			codigoErp,
+			preco
+		
+		FROM TB_JSON_RECEBIDO
+		CROSS APPLY OPENJSON(CONTEUDO)
+		
+		WITH(
+			codigoErp BIGINT,
+			preco DECIMAL(18,2)
+		)
+		
+			
+	COMMIT TRANSACTION;
+	END TRY
+	
+	BEGIN CATCH
+	
+		ROLLBACK TRANSACTION;
+		SELECT 'ERRO!'
+	
+	END CATCH
+	
+END
+
+

@@ -1,17 +1,5 @@
 -- Json padrão para o meu projeto:
-/*	{
-		"codigoErp": 123,
-		"descricao": "Dipirona Sódica 500mg - 20 Comprimidos",
-		"categoriaId": 1,
-		"estoque": 250,
-		"preco": 12.90,
-		"statusId": 1
-	}
-	
-	
-	{"codigoErp":123,"descricao":"Dipirona Sódica 500mg - 20 Comprimidos","categoriaId":15,"estoque":250,"preco":12.90,"statusId":1}
-	
- */
+-- {"codigoErp":123,"descricao":"Dipirona Sódica 500mg - 20 Comprimidos","categoriaId":15,"estoque":250,"preco":12.90,"statusId":1}
 
 USE projetos;
 GO
@@ -28,6 +16,11 @@ CREATE TABLE dbo.TB_CATEGORIA
 (
     ID       		INT IDENTITY(1,1) PRIMARY KEY,
     NOME    		VARCHAR(100) NOT NULL
+);
+
+CREATE TABLE dbo.TB_STATUS (
+	ID              INT IDENTITY(1,1) PRIMARY KEY,
+	NOME            VARCHAR(30) NOT NULL
 );
 
 CREATE TABLE dbo.TB_CADASTRO_PRODUTO
@@ -49,4 +42,3 @@ CREATE TABLE dbo.TB_PRECO_PRODUTO
     CODIGO_ERP      BIGINT PRIMARY KEY REFERENCES projetos.dbo.TB_CADASTRO_PRODUTO(CODIGO_ERP),
     PRECO           DECIMAL(18,2) NOT NULL
 );
-
