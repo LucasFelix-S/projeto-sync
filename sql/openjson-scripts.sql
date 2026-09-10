@@ -5,12 +5,10 @@ DECLARE @DadosJson TABLE (
 	estoque				DECIMAL(18,4),
 	preco				DECIMAL(18,2),
 	statusId			INT
-)
+);
 
-BEGIN
-	
+BEGIN TRY
 	BEGIN TRANSACTION;
-	BEGIN TRY
 		
 		INSERT INTO @DadosJson(codigoErp, descricao, categoriaId, estoque, preco, statusId)
 		SELECT
@@ -32,7 +30,8 @@ BEGIN
 			statusId INT
 		)
 		
-		WHERE TIPO = 'produtos';
+		WHERE TIPO = 'produtos'
+		  AND PROCESSADO = 'N';
 		
 		INSERT INTO TB_CADASTRO_PRODUTO(CODIGO_ERP, DESCRICAO, ID_CATEGORIA, ID_STATUS)
 		SELECT
@@ -43,13 +42,11 @@ BEGIN
 		FROM @DadosJson;
 				
 		
-		
 		INSERT INTO TB_ESTOQUE_PRODUTO(CODIGO_ERP, SALDO_ESTOQUE)
 		SELECT
 			codigoErp,
 			estoque	
 		FROM @DadosJson;
-		
 		
 		
 		INSERT INTO TB_PRECO_PRODUTO(CODIGO_ERP, PRECO)
@@ -58,17 +55,17 @@ BEGIN
 			preco
 		FROM @DadosJson;
 		
-			
+		-- adicionar regra para que o PROCESSADO 'N' vire 'S' para os que foram alterados.
+		
 	COMMIT TRANSACTION;
-	END TRY
+END TRY
 	
 	BEGIN CATCH
 	
-		ROLLBACK TRANSACTION;
+		IF @@TRANCOUNT > 0
+    		ROLLBACK TRANSACTION;
 		SELECT
 		    ERROR_NUMBER() AS numero,
 		    ERROR_MESSAGE() AS mensagem;
 	
-	END CATCH
-	
-END
+END CATCH
