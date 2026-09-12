@@ -1,4 +1,5 @@
 DECLARE @DadosJson TABLE (
+	Id					BIGINT,
 	codigoErp			BIGINT,
 	descricao			VARCHAR(150),
 	categoriaId			INT,
@@ -10,15 +11,16 @@ DECLARE @DadosJson TABLE (
 BEGIN TRY
 	BEGIN TRANSACTION;
 		
-		INSERT INTO @DadosJson(codigoErp, descricao, categoriaId, estoque, preco, statusId)
+		INSERT INTO @DadosJson(Id, codigoErp, descricao, categoriaId, estoque, preco, statusId)
 		SELECT
-			codigoErp,
-			descricao,
-			categoriaId,
-			estoque,
-			preco,
-			statusId
-		FROM TB_JSON_RECEBIDO
+			A.ID,
+			dados.codigoErp,
+			dados.descricao,
+			dados.categoriaId,
+			dados.estoque,
+			dados.preco,
+			dados.statusId
+		FROM TB_JSON_RECEBIDO A
 		CROSS APPLY OPENJSON(CONTEUDO)
 			
 		WITH (
@@ -28,10 +30,10 @@ BEGIN TRY
 			estoque DECIMAL(18,4),
 			preco DECIMAL(18, 2),
 			statusId INT
-		)
+		) AS dados
 		
-		WHERE TIPO = 'produtos'
-		  AND PROCESSADO = 'N';
+		WHERE A.TIPO = 'produtos'
+		  AND A.PROCESSADO = 'N';
 		
 		INSERT INTO TB_CADASTRO_PRODUTO(CODIGO_ERP, DESCRICAO, ID_CATEGORIA, ID_STATUS)
 		SELECT
@@ -55,8 +57,12 @@ BEGIN TRY
 			preco
 		FROM @DadosJson;
 		
-		-- adicionar regra para que o PROCESSADO 'N' vire 'S' para os que foram alterados.
 		
+		UPDATE TB_JSON_RECEBIDO
+		SET PROCESSADO = 'S'
+		FROM TB_JSON_RECEBIDO A
+		INNER JOIN @DadosJSon B ON B.Id = A.ID;
+	
 	COMMIT TRANSACTION;
 END TRY
 	
